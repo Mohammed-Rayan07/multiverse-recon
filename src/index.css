@@ -1,0 +1,289 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+@import '@photo-sphere-viewer/core/index.css';
+
+/*
+ * Doomsday palette
+ *  - doom:    Doctor Doom / Silicon Maze emerald (primary, the player's guess)
+ *  - tva:     TVA amber (time, scores, the true location)
+ *  - rift:    multiversal magenta (danger, timer running out)
+ */
+@theme {
+  --color-void: #04070a;
+  --color-abyss: #070d11;
+  --color-panel: #0a1419;
+  --color-edge: #16303a;
+  --color-doom: #2bff88;
+  --color-doom-dim: #18a35a;
+  --color-tva: #ffb21e;
+  --color-rift: #ff3d6e;
+  --color-ink: #d9f7e8;
+  --color-mute: #7c9a8f;
+
+  --font-display: 'Oxanium', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --animate-scan: scan 6s linear infinite;
+  --animate-pulse-ring: pulse-ring 1.6s ease-out infinite;
+  --animate-flicker: flicker 3s steps(1) infinite;
+
+  @keyframes scan {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(100vh); }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.6); opacity: 0.9; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  @keyframes flicker {
+    0%, 92%, 100% { opacity: 1; }
+    93% { opacity: 0.4; }
+    95% { opacity: 0.9; }
+    96% { opacity: 0.3; }
+  }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+body {
+  overflow: hidden;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-doom) 35%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-tva);
+  outline-offset: 2px;
+}
+
+/* Thin themed scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge) transparent;
+}
+
+/* ---------- HUD primitives ---------- */
+
+/* Glass panel with clipped "tech" corners */
+.hud-panel {
+  background: color-mix(in srgb, var(--color-panel) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-doom) 22%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.hud-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-doom) 25%, transparent),
+    0 0 24px -6px color-mix(in srgb, var(--color-doom) 45%, transparent);
+}
+
+.text-glow {
+  text-shadow: 0 0 18px color-mix(in srgb, currentColor 55%, transparent);
+}
+
+/* Faint grid used behind menus */
+.bg-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-doom) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-doom) 7%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* CRT scanline overlay */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgb(0 0 0 / 0.18) 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Primary action button */
+.btn-doom {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #02150b;
+  background: var(--color-doom);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  transition: filter 0.15s, transform 0.15s, opacity 0.15s;
+}
+.btn-doom:hover:not(:disabled) {
+  filter: brightness(1.12) drop-shadow(0 0 14px var(--color-doom));
+}
+.btn-doom:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+.btn-doom:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  border: 1px solid color-mix(in srgb, var(--color-doom) 30%, transparent);
+  background: color-mix(in srgb, var(--color-panel) 70%, transparent);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--color-doom);
+  color: var(--color-doom);
+}
+.btn-ghost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--color-ink);
+  border: 1px solid color-mix(in srgb, var(--color-doom) 22%, transparent);
+  background: color-mix(in srgb, var(--color-panel) 80%, transparent);
+  backdrop-filter: blur(8px);
+  transition: color 0.15s, border-color 0.15s;
+}
+.icon-btn:hover {
+  color: var(--color-doom);
+  border-color: var(--color-doom);
+}
+
+/* ---------- Leaflet theming ---------- */
+
+.leaflet-container {
+  background: #0b1418;
+  font-family: var(--font-display);
+  cursor: crosshair !important;
+}
+.leaflet-container.leaflet-drag-target,
+.leaflet-dragging .leaflet-container {
+  cursor: grabbing !important;
+}
+.leaflet-control-attribution {
+  background: rgb(4 7 10 / 0.7) !important;
+  color: var(--color-mute) !important;
+  font-size: 9px !important;
+}
+.leaflet-control-attribution a {
+  color: var(--color-doom-dim) !important;
+}
+.leaflet-bar a {
+  background: var(--color-panel) !important;
+  color: var(--color-ink) !important;
+  border-color: var(--color-edge) !important;
+}
+.leaflet-bar a:hover {
+  color: var(--color-doom) !important;
+}
+.leaflet-tooltip.recon-tip {
+  background: var(--color-panel);
+  color: var(--color-ink);
+  border: 1px solid var(--color-edge);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  box-shadow: none;
+}
+.leaflet-tooltip.recon-tip::before {
+  display: none;
+}
+
+/* Custom pin markers (built as divIcons in src/components/mapIcons.ts) */
+.recon-pin {
+  position: relative;
+}
+.recon-pin .pin-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 9999px;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 0.5), 0 0 16px currentColor;
+  background: currentColor;
+}
+.recon-pin .pin-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+.recon-pin .pin-label {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  transform: translateX(-50%);
+  font: 700 10px/1 var(--font-mono);
+  color: #02150b;
+  background: currentColor;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.recon-pin .pin-label span {
+  color: #02150b;
+}
+
+/* ---------- Photo Sphere Viewer ---------- */
+
+.psv-container {
+  background: var(--color-void) !important;
+}
+/* We render our own portal loader (PanoViewer.tsx) */
+.psv-loader-container {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
