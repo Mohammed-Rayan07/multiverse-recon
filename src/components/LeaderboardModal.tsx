@@ -115,7 +115,7 @@ export default function LeaderboardModal({ open, onClose, initialDifficulty = 'm
           </tbody>
         </table>
       )}
-      <p className="mt-3 text-[11px] text-mute">Every score is re-calculated on the server from the raw guesses, so it can't be faked by editing the page.</p>
+      <p className="mt-3 text-[11px] text-mute">Every score is re-calculated on the server from the submitted guesses, with timer and hint rules enforced and one submission per game, so a total can't be inflated by editing the page.</p>
     </Modal>
   );
 }

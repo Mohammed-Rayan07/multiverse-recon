@@ -15,7 +15,7 @@
 
 - **Real panoramas, no API key needed.** 225 hand-checked, geotagged **360° equirectangular panoramas** from Wikimedia Commons, covering **82 countries on all 7 continents**. You can drag to look around in every direction and zoom, like Street View. There is no Google billing key that could expire during judging.
 - **Exact distance math, unit-tested.** Scoring uses the Haversine great-circle distance. The reveal screen also shows the survey-grade **Vincenty (WGS-84 ellipsoid)** distance. **33 automated tests** cover city pairs, the antimeridian, antipodal points, wrapped Leaflet longitudes, a geodesy reference case, scoring edge cases and the leaderboard's anti-cheat rules.
-- **All four bonus mechanics are built:** Time Dilation (timers), Nexus Streaks (multiplier), three Difficulty Levels (Easy hints, Hard zoomed-in with a strict timer), and a **global leaderboard in shared Postgres** that **re-scores every game on the server**, so totals can't be faked.
+- **All four bonus mechanics are built:** Time Dilation (timers), Nexus Streaks (multiplier), three Difficulty Levels (Easy hints, Hard zoomed-in with a strict timer), and a **global leaderboard in shared Postgres** that **re-scores every game on the server**, so a total can't be inflated by editing the page or the request.
 - **Runs locally with zero setup.** `npm install && npm run dev` gives you the full game, leaderboard included (it uses an in-memory store when no database is configured).
 
 ---
@@ -111,7 +111,7 @@ Code: [`scoring.ts`](src/lib/scoring.ts), tests: [`scoring.test.ts`](src/lib/sco
 | 🏆 **Leaderboards (shared persistent storage)** | **Neon serverless Postgres** behind Vercel Functions. Separate boards per difficulty, for **all-time** and for **today's Daily Anomaly**. See *Anti-cheat* below |
 | ➕ Extras | Daily Anomaly mode, personal bests, recently-seen avoidance, km/mi, sound with a mute toggle, share card, offline fallback |
 
-**Anti-cheat: why the leaderboard can be trusted**
+**Anti-cheat: what the server enforces**
 
 1. `POST /api/session`: the server picks the locations and returns them in an **HMAC-SHA256 signed token**.
 2. `POST /api/scores`: the client sends only raw guesses, hints and times. The server:
@@ -119,6 +119,8 @@ Code: [`scoring.ts`](src/lib/scoring.ts), tests: [`scoring.test.ts`](src/lib/sco
    - enforces the rules (time limit per round, hints only on Easy, 5 distinct rounds, wall-clock plausibility),
    - **re-computes every distance and point with the same `scoring.ts` the game uses**, ignoring any client total,
    - rejects **replays** (unique session id) and sanitises names.
+
+> **Honest limit:** like any client-side geo game, the browser has to know the locations to show them, so the *guesses* themselves are client-reported. The server guarantees the score is computed correctly from those guesses, within the rules, once per session. It cannot prove a human made them.
 
 All of this is covered by [`server/core.test.ts`](server/core.test.ts) (a tampered token gives 403, a foreign location 400, hints on Hard 400, over-time 400, a replay 409).
 
