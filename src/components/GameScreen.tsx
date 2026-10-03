@@ -144,7 +144,7 @@ export default function GameScreen() {
 
       {/* ---------------- Top HUD ---------------- */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-[1000] flex items-start justify-between gap-2 p-2 sm:p-4">
-        <div className="pointer-events-auto hud-panel flex items-center gap-3 px-3 py-2 sm:gap-5 sm:px-4">
+        <div className="pointer-events-auto hud-panel flex items-center gap-2.5 px-2.5 py-1.5 sm:gap-5 sm:px-4 sm:py-2">
           <div className="hidden leading-tight sm:block">
             <p className="font-mono text-[9px] tracking-[0.3em] text-doom uppercase">Multiverse Recon</p>
             <p className="text-xs text-mute">
@@ -178,14 +178,14 @@ export default function GameScreen() {
           <Timer />
         </div>
 
-        <div className="pointer-events-auto flex gap-1.5">
-          <button className="icon-btn" onClick={() => setUnit(unit === 'km' ? 'mi' : 'km')} title="Toggle km / miles" aria-label="Toggle distance unit">
+        <div className="pointer-events-auto flex flex-col gap-1.5 sm:flex-row">
+          <button className="icon-btn !hidden sm:!inline-grid" onClick={() => setUnit(unit === 'km' ? 'mi' : 'km')} title="Toggle km / miles" aria-label="Toggle distance unit">
             <span className="flex items-center gap-0.5 font-mono text-[10px] font-bold">
               <Ruler size={12} />
               {unit}
             </span>
           </button>
-          <button className="icon-btn" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}>
+          <button className="icon-btn !hidden sm:!inline-grid" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}>
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
           <button className="icon-btn" onClick={() => setTourOpen(true)} aria-label="Show tour" title="How to play (tour)" data-tour="help">

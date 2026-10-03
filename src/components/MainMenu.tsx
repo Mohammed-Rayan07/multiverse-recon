@@ -2,7 +2,7 @@
  * Main menu: pick Classic or the Daily Anomaly, choose a difficulty and start.
  * A random panorama slowly rotates behind the menu as a live backdrop.
  */
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, CalendarDays, Globe2, Loader2, Play, Ruler, Trophy, Volume2, VolumeX, Zap } from 'lucide-react';
 import { useGame, useSettings } from '../game/store';
@@ -12,7 +12,8 @@ import { DIFFICULTIES, type Difficulty } from '../lib/scoring';
 import type { Mode } from '../lib/api';
 import { load } from '../lib/storage';
 import { sfx } from '../lib/sound';
-import PanoViewer from './PanoViewer';
+// three.js is heavy: load the 360° backdrop after the menu has painted.
+const PanoViewer = lazy(() => import('./PanoViewer'));
 import LeaderboardModal from './LeaderboardModal';
 import ScoringModal from './ScoringModal';
 
@@ -29,11 +30,21 @@ export default function MainMenu() {
   const backdrop = useMemo(() => ANOMALIES[Math.floor(Math.random() * ANOMALIES.length)], []);
   const best = load<number>(`best:${difficulty}:${mode}`, 0);
 
+  // Prefetch the game screen chunk while the player is choosing a mode.
+  useEffect(() => {
+    const id = window.setTimeout(() => void import('./GameScreen'), 1200);
+    return () => window.clearTimeout(id);
+  }, []);
+
   return (
     <div className="fixed inset-0 overflow-y-auto">
       {/* Live 360° backdrop */}
       <div className="fixed inset-0 opacity-45">
-        {backdrop && <PanoViewer url={panoramaUrl(backdrop, 1920)} fov={80} lockZoom={false} autoRotate interactive={false} />}
+        {backdrop && (
+          <Suspense fallback={null}>
+            <PanoViewer url={panoramaUrl(backdrop, 1920)} fov={80} lockZoom={false} autoRotate interactive={false} />
+          </Suspense>
+        )}
       </div>
       <div className="bg-grid scanlines fixed inset-0 bg-gradient-to-b from-void/70 via-void/55 to-void" />
       <div className="pointer-events-none fixed inset-x-0 top-0 h-40 animate-scan bg-gradient-to-b from-transparent via-doom/5 to-transparent" />
@@ -126,7 +137,6 @@ export default function MainMenu() {
               className="btn-doom h-14 px-10 text-base sm:min-w-64"
               disabled={starting || ANOMALIES.length === 0}
               onClick={() => startGame(difficulty, mode)}
-              autoFocus
             >
               {starting ? <Loader2 size={18} className="animate-spin" /> : <Play size={18} />}
               {starting ? 'Opening portal…' : 'Enter the multiverse'}

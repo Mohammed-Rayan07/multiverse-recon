@@ -71,7 +71,7 @@ export default function RevealPanel() {
     <motion.div className="absolute inset-0 z-[900] flex flex-col bg-void" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="relative min-h-0 flex-1">
         <ResultMap pairs={pairs} padTop={150} />
-        <div className="pointer-events-none absolute top-20 left-1/2 z-[1000] -translate-x-1/2 sm:top-24">
+        <div className="pointer-events-none absolute top-24 left-1/2 z-[1000] hidden -translate-x-1/2 sm:block">
           <div className="hud-panel px-4 py-1.5 font-mono text-[11px] tracking-[0.25em] text-tva uppercase">
             Anomaly {round + 1} / {ROUNDS_PER_GAME} · revealed
           </div>
