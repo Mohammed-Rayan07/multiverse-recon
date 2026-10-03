@@ -7,7 +7,26 @@
 
 ### ▶ Play it: **https://multiverse-recon.vercel.app**
 
-🎬 **Demo video:** _link added on submission_
+### 🎬 Video walkthrough (approach + code): **https://youtu.be/s1hSyKfZbSM**
+
+[![Multiverse Recon video walkthrough](https://img.youtube.com/vi/s1hSyKfZbSM/hqdefault.jpg)](https://youtu.be/s1hSyKfZbSM)
+
+---
+
+## 📋 Submission at a glance
+
+| Task | Subtask | Pts | Status | Details |
+|---|---|---|---|---|
+| **1 · Interface & Map** | 1.1 Location Viewer (responsive, themed, optional skippable tour) | 25 | ✅ | [↓](#task-1-the-observation-deck) |
+| | 1.2 Interactive Nexus Map (clickable, single movable marker) | 25 | ✅ | [↓](#task-1-the-observation-deck) |
+| **2 · Game Logic** | 2.1 Anomaly Generation (random from a predefined list) | 20 | ✅ | [↓](#task-2-timeline-stabilization) |
+| | 2.2 Convergence Calculation (Haversine, km / mi) | 40 | ✅ | [↓](#task-2-timeline-stabilization) |
+| **3 · Scoring & Progression** | 3.1 Scoring System (inverse to distance, max + zero-point distance) | 25 | ✅ | [↓](#task-3-the-tva-assessment) |
+| | 3.2 5 rounds, cumulative score, Final Results map, Play Again | 25 | ✅ | [↓](#task-3-the-tva-assessment) |
+| **4 · Bonus** | Timers · Streak multiplier · Easy/Medium/Hard · Shared leaderboard | 20 | ✅ all 4 | [↓](#task-4-multiversal-anomalies-bonus) |
+| **5 · Deploy & Docs** | 5.1 Deployment (Vercel) | 10 | ✅ | [live](https://multiverse-recon.vercel.app) |
+| | 5.2 README (description, tech stack, local setup) | 10 | ✅ | [stack](#-tech-stack) · [setup](#-run-it-locally) |
+| | **Video explanation** (task-repo guidelines) | – | ✅ | [YouTube](https://youtu.be/s1hSyKfZbSM) |
 
 ---
 
@@ -16,6 +35,7 @@
 - **Real panoramas, no API key needed.** 225 hand-checked, geotagged **360° equirectangular panoramas** from Wikimedia Commons, covering **82 countries on all 7 continents**. You can drag to look around in every direction and zoom, like Street View. There is no Google billing key that could expire during judging.
 - **Exact distance math, unit-tested.** Scoring uses the Haversine great-circle distance. The reveal screen also shows the survey-grade **Vincenty (WGS-84 ellipsoid)** distance. **33 automated tests** cover city pairs, the antimeridian, antipodal points, wrapped Leaflet longitudes, a geodesy reference case, scoring edge cases and the leaderboard's anti-cheat rules.
 - **All four bonus mechanics are built:** Time Dilation (timers), Nexus Streaks (multiplier), three Difficulty Levels (Easy hints, Hard zoomed-in with a strict timer), and a **global leaderboard in shared Postgres** that **re-scores every game on the server**, so a total can't be inflated by editing the page or the request.
+- **Built from scratch.** All game logic is my own TypeScript: the distance maths (Haversine and Vincenty), the scoring curve, the round/streak/timer state machine, seeded location picking, the panorama loader, the leaderboard API with its anti-cheat checks, and the data pipeline. No game template or GeoGuessr clone was used. Libraries only draw things: Photo Sphere Viewer for the 360° image, Leaflet for the map, React for the UI. The code is commented to explain the reasoning, especially in [`geo.ts`](src/lib/geo.ts), [`scoring.ts`](src/lib/scoring.ts) and [`server/core.ts`](server/core.ts).
 - **Runs locally with zero setup.** `npm install && npm run dev` gives you the full game, leaderboard included (it uses an in-memory store when no database is configured).
 
 ---
@@ -126,8 +146,19 @@ All of this is covered by [`server/core.test.ts`](server/core.test.ts) (a tamper
 
 ### Task 5: Deployment & Documentation
 
-- **Live:** https://multiverse-recon.vercel.app (Vercel: static Vite build plus two serverless functions).
-- **Docs:** this README.
+**5.1 Deployment** (10 pts)
+
+- **Live and publicly playable:** https://multiverse-recon.vercel.app, hosted on **Vercel**: a static Vite build plus two serverless functions (`/api/session`, `/api/scores`) backed by Neon Postgres.
+- Works on desktop and mobile browsers with no login or API key. It has been checked end to end in production: playing a game and submitting a server-verified score.
+
+**5.2 Documentation** (10 pts)
+
+This README covers everything the task asks for:
+
+- **Project description:** [intro](#multiverse-recon--doomsday-edition) and [task coverage](#-task-coverage-point-by-point).
+- **Tech stack:** [🧰 Tech stack](#-tech-stack).
+- **How to run and test it locally:** [🚀 Run it locally](#-run-it-locally) (`npm install && npm run dev`, `npm test`).
+- **Video walkthrough** of the approach and code: https://youtu.be/s1hSyKfZbSM.
 
 ---
 
@@ -158,7 +189,7 @@ Result: **225 locations · 82 countries · 7 continents**, with author and licen
 
 ## 🚀 Run it locally
 
-Requirements: **Node.js 20+**.
+Requirements: **Node.js 20.19+ or 22.12+** (required by Vite 8).
 
 ```bash
 git clone https://github.com/Mohammed-Rayan07/multiverse-recon.git
