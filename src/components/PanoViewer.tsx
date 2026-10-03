@@ -83,28 +83,53 @@ export default function PanoViewer({ url, fov, lockZoom, autoRotate, interactive
     let cancelled = false;
     setLoading(true);
     setProgress(0);
-    // Download through our cache (real progress, retry, preloaded bytes), then show it.
-    loadPanorama(url, (p) => !cancelled && setProgress(p))
-      .then((blobUrl) => {
-        if (cancelled || !viewer.current) return false;
-        return viewer.current.setPanorama(blobUrl, {
-          showLoader: false,
-          transition: false,
-          // Random starting direction so the "best" view isn't handed to the player.
-          position: { yaw: Math.random() * Math.PI * 2, pitch: 0 },
-          zoom: fovToLevel(fov, MIN_FOV, maxFov),
-        });
-      })
-      .then((completed) => {
-        // PSV resolves `false` (instead of rejecting) when a load is superseded/aborted.
-        if (cancelled || completed === false) return;
-        setLoading(false);
-        callbacks.current.onReady?.();
-      })
-      .catch(() => {
-        if (cancelled) return;
-        callbacks.current.onError?.();
+
+    /*
+     * Progressive loading: a 3840 px panorama is ~2.5 MB, its 1920 px twin ~4x
+     * smaller. We download both through the cache, show whichever arrives
+     * first so the round can start quickly, then swap in the sharp version
+     * without moving the camera. If the sharp one was preloaded during the
+     * previous round it simply wins the race.
+     */
+    const lowUrl = url.includes('/3840px-') ? url.replace('/3840px-', '/1920px-') : null;
+    let shown: 'none' | 'low' | 'high' = 'none';
+    let ready = false;
+    let failures = 0;
+    const sources = lowUrl ? 2 : 1;
+    // Random starting direction so the "best" view isn't handed to the player.
+    const startYaw = Math.random() * Math.PI * 2;
+
+    const show = async (blobUrl: string, quality: 'low' | 'high') => {
+      const v2 = viewer.current;
+      if (cancelled || !v2 || shown === 'high' || (quality === 'low' && shown !== 'none')) return;
+      shown = quality;
+      const completed = await v2.setPanorama(blobUrl, {
+        showLoader: false,
+        transition: false,
+        // Before the first image is visible use the random start; on upgrade keep
+        // exactly what the player is looking at.
+        position: ready ? v2.getPosition() : { yaw: startYaw, pitch: 0 },
+        zoom: ready ? v2.getZoomLevel() : fovToLevel(fov, MIN_FOV, maxFov),
       });
+      // PSV resolves `false` (instead of rejecting) when a load is superseded – e.g. the
+      // sharp image replaced the low one mid-way. Whichever completes first starts the round.
+      if (cancelled || completed === false || ready) return;
+      ready = true;
+      setLoading(false);
+      callbacks.current.onReady?.();
+    };
+    const fail = () => {
+      if (!cancelled && ++failures >= sources && shown === 'none') callbacks.current.onError?.();
+    };
+
+    loadPanorama(url, lowUrl ? undefined : (p) => !cancelled && setProgress(p))
+      .then((b) => show(b, 'high'))
+      .catch(fail);
+    if (lowUrl) {
+      loadPanorama(lowUrl, (p) => !cancelled && setProgress(p))
+        .then((b) => show(b, 'low'))
+        .catch(fail);
+    }
     return () => {
       cancelled = true;
     };
