@@ -9,7 +9,7 @@
 
 ### 🎬 Video walkthrough (approach + code): **https://youtu.be/s1hSyKfZbSM**
 
-[![Multiverse Recon video walkthrough](https://img.youtube.com/vi/s1hSyKfZbSM/hqdefault.jpg)](https://youtu.be/s1hSyKfZbSM)
+[![Watch the walkthrough on YouTube](https://img.shields.io/badge/%E2%96%B6%20Watch%20the%20walkthrough-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/s1hSyKfZbSM) [![Play live](https://img.shields.io/badge/Play%20live-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://multiverse-recon.vercel.app)
 
 ---
 
